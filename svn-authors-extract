@@ -22,7 +22,13 @@ then
   exit 1
 fi
 
+# svn parsing below assumes English output
+export LANG=C 
+export LC_MESSAGES=C
+
 SVN_ROOT=`svn info "${SVN_URL}" | grep '^Repository.Root' | sed -e 's/^Repository.Root: //'`
+
+echo "Detected SVN root as: ${SVN_ROOT}"
 
 svn log -q "${SVN_ROOT}" | \
   awk -F '|' '/^r/ {sub("^ ", "", $2); sub(" $", "", $2); print $2" = "$2" "}' \
