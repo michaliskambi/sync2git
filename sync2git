@@ -93,13 +93,13 @@ do
   git push bare
 
   cd "${GIT_BARE}"
-  git branch -m trunk master
-  git for-each-ref --format='%(refname)' refs/heads/tags | \
-    cut -d / -f 4 | \
+  git branch -m origin/trunk master
+  git for-each-ref --format='%(refname)' refs/heads/origin/tags | \
+    cut -d / -f 5 | \
     while read ref;
     do
-      git tag "$ref" "refs/heads/tags/$ref"
-      git branch -D "tags/$ref"
+      git tag "$ref" "refs/heads/origin/tags/$ref"
+      git branch -D "origin/tags/$ref"
     done
   git remote add origin "${GIT_REPO}"
   git config branch.master.remote origin
