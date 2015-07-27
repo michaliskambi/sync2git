@@ -2,11 +2,22 @@
 
 1. Set up directories and permissions:
 
-   mkdir -p /etc/sync2git/projects
-   mkdir -p /var/lib/sync2git
+   sudo mkdir -p /etc/sync2git/projects
+   sudo mkdir -p /var/lib/sync2git
 
-   chown sync2git /var/lib/sync2git
+   # Change the ownership of above directories to the user
+   # that will run sync2git.
+   # Below we call this user 'sync2git' (see the cron instructions
+   # below for info how to create such user), you can also just
+   # use your current normal username.
+   
+   chown sync2git /etc/sync2git/projects /var/lib/sync2git
 
+   # Remember to execute the rest of commands as the user that owns
+   # /etc/sync2git/projects and /var/lib/sync2git directories.
+   # If this is your current normal user, then don't worry.
+   # If this is a special user, try "sudo -u sync2gituser ...".
+   
 2. Create a project:
 
    mkdir -p /etc/sync2git/projects/myproject
@@ -29,6 +40,10 @@
 
    It is OK to go and add extra records to the file later, for example,
    if new users are added to SVN.
+
+   The format of the authors.txt file is
+     svn_user_name = FirstName LastName <email.address.used.on.github@example.com>
+   Remember that you *must* provide emails.
 
    Also, if uploading to a service like github, please use the
    email addresses that the committers use for their github accounts.
