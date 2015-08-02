@@ -1,0 +1,29 @@
+#!/bin/bash
+set -eu
+
+# Simple script to redirect the whole long sync2git output
+# (which includes git-svn output) to a log file.
+# Also outputs the time of start and end (useful to know
+# when scheduling cron jobs).
+#
+# If you run this script as non-root used (and you should!),
+# first make sure it has permissions to the appropriate log file:
+#
+#   sudo touch /var/log/sync2git.log
+#   sudo chown sync2gituser:adm /var/log/sync2git.log
+#
+# Install as cron job by a line like
+#
+#   cd $HOME/sources/sync2git/ && ./sync2git-logger
+
+LOG_FILE=/var/log/sync2git.log
+START_TIME="`LANG=C date`"
+
+echo '----------------------------------------------------------------' >> "$LOG_FILE"
+echo "sync2git run on ${START_TIME}" >> "$LOG_FILE"
+
+if ! ./sync2git >> "$LOG_FILE" 2>&1; then
+  echo "sync2git started on ${START_TIME} and failed, see ${LOG_FILE} for details"
+fi
+
+echo 'sync2git finished successfully on '`LANG=C date` >> "$LOG_FILE"
