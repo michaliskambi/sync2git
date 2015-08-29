@@ -24,6 +24,6 @@ echo "sync2git run on ${START_TIME}" >> "$LOG_FILE"
 
 if ! ./sync2git >> "$LOG_FILE" 2>&1; then
   echo "sync2git started on ${START_TIME} and failed, see ${LOG_FILE} for details"
+else
+  echo 'sync2git finished successfully on '`LANG=C date` >> "$LOG_FILE"
 fi
-
-echo 'sync2git finished successfully on '`LANG=C date` >> "$LOG_FILE"
