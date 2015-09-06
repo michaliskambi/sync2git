@@ -91,6 +91,16 @@ do
   git symbolic-ref HEAD refs/heads/trunk
 
   cd "${SVN_CLONE}"
+  
+  if [ ! -z "$COMMIT_GIT_TO_SVN" ];
+  then
+    git pull "${GIT_REPO}"
+    git svn dcommit
+    # --force is required to be able to later push SVN back to GIT.
+    # It may change commits and their hashes, no way around it?
+    FORCE="--force"
+  fi
+
   git push bare
 
   cd "${GIT_BARE}"
