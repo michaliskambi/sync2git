@@ -143,6 +143,7 @@ do
     echo "First run, doing a full git-svn clone, this may take a while..."
     git svn clone \
       "${SVN_REPO}" \
+      --prefix=origin/ \
       -A "${AUTHORS_FILE}" \
       ${SVN_LAYOUT} \
       "${SVN_CLONE}"
