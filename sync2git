@@ -31,20 +31,22 @@ function synchronize_only_git2svn ()
     echo "git-svn clone ({SVN_CLONE}/.git) does not exist, ONLY_COMMIT_GIT_TO_SVN implemetation is not ready for this!"
     exit 1
   fi
+  
+  echo "git2svn synchronization for: ${PROJECT_NAME}"
 
   local LAST_COMMITTED_REVISION_FILE="${PROJECT_ROOT}/last-committed-revision-to-svn.txt"
 
   cd "${SVN_CLONE}"
   
   if [ ! -f "${LAST_COMMITTED_REVISION_FILE}" ]; then
-    local CURRENT_GIT_HEAD=`git show-ref --head --hash HEAD`
+    local CURRENT_GIT_HEAD=`git show-ref --head --hash HEAD | head -n 1`
     echo "First run with ONLY_COMMIT_GIT_TO_SVN, assuming that everything up to and including ${CURRENT_GIT_HEAD} is already synchronized with SVN."
     echo "${CURRENT_GIT_HEAD}" > "${LAST_COMMITTED_REVISION_FILE}"
   fi
   
   local PREVIOUS_GIT_HEAD="`cat \"${LAST_COMMITTED_REVISION_FILE}\"`"
   git pull --rebase
-  local CURRENT_GIT_HEAD=`git show-ref --head --hash HEAD`
+  local CURRENT_GIT_HEAD=`git show-ref --head --hash HEAD | head -n 1`
 
   if [ "${PREVIOUS_GIT_HEAD}" = "${CURRENT_GIT_HEAD}" ]; then
     echo "Nothing to commit, latest GIT revision ${CURRENT_GIT_HEAD} is already synchronized to SVN."
@@ -96,6 +98,9 @@ do
   CONFIG_FILE=${ETC_DIR}/config
   AUTHORS_FILE=${ETC_DIR}/authors.txt
   SVN_LAYOUT="--stdlayout"
+  # Need to reset all variables here, because this code block may execute for multiple projects.
+  COMMIT_GIT_TO_SVN=''
+  ONLY_COMMIT_GIT_TO_SVN=''
 
   . "${CONFIG_FILE}" || exit 1
 
