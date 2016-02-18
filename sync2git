@@ -13,6 +13,67 @@ function cleanup_lock {
   fi
 }
 
+# Synchronize GIT repo to SVN, *without* changing commit hashes
+# in GIT. This is only 1-way synchronization, from GIT to SVN, so never commit
+# to SVN anymore (with any other means than this script).
+#
+# Advantage over normal sync2git synchronization (with COMMIT_GIT_TO_SVN=true)
+# is that GIT repo is unchanged by this. GIT commit hashes are unchanged.
+# We effectively cancel out the "git commit hash wrangling" done by normal
+# "git svn dcommit" + "git svn rebase" combo (that commits to SVN, then gets
+# from SVN, and same GIT commit gets different hash).
+#
+# TODO: this requires that "${SVN_CLONE}" already exists and is initialized.
+function synchronize_only_git2svn ()
+{
+  if [ ! -d "${SVN_CLONE}/.git" ];
+  then
+    echo "git-svn clone ({SVN_CLONE}/.git) does not exist, ONLY_COMMIT_GIT_TO_SVN implemetation is not ready for this!"
+    exit 1
+  fi
+
+  local LAST_COMMITTED_REVISION_FILE="${PROJECT_ROOT}/last-committed-revision-to-svn.txt"
+
+  cd "${SVN_CLONE}"
+  
+  if [ ! -f "${LAST_COMMITTED_REVISION_FILE}" ]; then
+    local CURRENT_GIT_HEAD=`git show-ref --head --hash HEAD`
+    echo "First run with ONLY_COMMIT_GIT_TO_SVN, assuming that everything up to and including ${CURRENT_GIT_HEAD} is already synchronized with SVN."
+    echo "${CURRENT_GIT_HEAD}" > "${LAST_COMMITTED_REVISION_FILE}"
+  fi
+  
+  local PREVIOUS_GIT_HEAD="`cat \"${LAST_COMMITTED_REVISION_FILE}\"`"
+  git pull --rebase
+  local CURRENT_GIT_HEAD=`git show-ref --head --hash HEAD`
+
+  if [ "${PREVIOUS_GIT_HEAD}" = "${CURRENT_GIT_HEAD}" ]; then
+    echo "Nothing to commit, latest GIT revision ${CURRENT_GIT_HEAD} is already synchronized to SVN."
+  else
+    local TEMP_COMMIT_FILE="${PROJECT_ROOT}/commit-message.txt"
+    git log --pretty=format:"%s (by %an)" "${PREVIOUS_GIT_HEAD}..${CURRENT_GIT_HEAD}" > "${TEMP_COMMIT_FILE}"
+    echo >> "${TEMP_COMMIT_FILE}"
+    echo >> "${TEMP_COMMIT_FILE}"
+    echo 'Full log from GIT:' >> "${TEMP_COMMIT_FILE}"
+    git log "${PREVIOUS_GIT_HEAD}..${CURRENT_GIT_HEAD}" >> "${TEMP_COMMIT_FILE}"
+
+    local SVN_URL="`git svn info --url`"
+
+    echo "Commiting this:"
+    cat "${TEMP_COMMIT_FILE}"
+    # We use "git svn commit-diff" instead of "git svn dcommit", because "git svn dcommit"
+    # assumes that all previous commits have either magic "git-svn-id" inside their log message,
+    # or should be committed to SVN. We cannot work around it, using "git svn dcommit --revision"
+    # is too weak, it still sends to large change.
+    #
+    # So we use commit-diff, that has some disadvantages: it always makes a single SVN commit,
+    # even for multiple GIT commits, and we have to construct like log message ourselves.
+    echo 'Running:' git svn commit-diff -rHEAD --file="${TEMP_COMMIT_FILE}" "${PREVIOUS_GIT_HEAD}" "${CURRENT_GIT_HEAD}" "${SVN_URL}"
+                    git svn commit-diff -rHEAD --file="${TEMP_COMMIT_FILE}" "${PREVIOUS_GIT_HEAD}" "${CURRENT_GIT_HEAD}" "${SVN_URL}"
+
+    echo "${CURRENT_GIT_HEAD}" > "${LAST_COMMITTED_REVISION_FILE}"
+  fi
+}
+
 trap cleanup_lock EXIT
 
 ETC_PROJECTS=/etc/sync2git/projects
@@ -60,6 +121,14 @@ do
     wget -q -O "${AUTHORS_FILE}" "${AUTHORS_URL}"
   fi
   SVN_CLONE="${PROJECT_ROOT}/svn-clone"
+
+  if [ ! -z "$ONLY_COMMIT_GIT_TO_SVN" ];
+  then
+    synchronize_only_git2svn
+    rm -rf "${LOCK_FILE}"
+    continue
+  fi
+
   GIT_BARE=`mktemp -d 2>/dev/null || mktemp -d -t 'sync2git'`
 
   cd "${PROJECT_ROOT}"
@@ -90,7 +159,7 @@ do
   git symbolic-ref HEAD refs/heads/trunk
 
   cd "${SVN_CLONE}"
-  
+
   if [ ! -z "$COMMIT_GIT_TO_SVN" ];
   then
     git pull "${GIT_REPO}"
@@ -121,4 +190,3 @@ do
   rm -rf "${LOCK_FILE}"
 
 done
-
