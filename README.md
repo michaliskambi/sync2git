@@ -67,7 +67,7 @@ By default sync2git synchronizes SVN repository -> GIT (1 way).
 
     ~~~~
     sync2git
-    ~~~
+    ~~~~
 
 5. Run it from cron
 
