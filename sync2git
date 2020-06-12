@@ -149,8 +149,13 @@ do
       "${SVN_CLONE}"
     cd "${SVN_CLONE}"
   else
-    echo "git-svn clone already exists, doing a rebase..."
+    echo "git-svn clone already exists, confirm fetched..."
     cd "${SVN_CLONE}"
+    # If a network issue disrupts a large a initial clone, then only a partial history is checked out. 
+    # This state can be recoved by running a fetch. There is no harm in attempting this, 
+    # so do it unconditionally if the clone already exists.
+    git svn fetch
+    echo "Doing a rebase..."
     git remote rm bare || echo "failed to delete remote:bare, proceeding anyway"
     git svn rebase \
       --fetch-all \
