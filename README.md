@@ -93,6 +93,11 @@ By default sync2git synchronizes SVN repository -> GIT (1 way).
     failure and success).
     See the sync2git-logger for more information.
 
+Notes:
+ - If you need to pass extra arguments to the fetch commands you can set FETCH_ARGS
+   in the project's config. For example `--ignore-paths` can be used to exclude part
+   of a repository from being included in the git clone.
+
 # (Hacky) Synchronizing 2 way: SVN -> GIT and GIT -> SVN
 
 Our fork on https://github.com/michaliskambi/sync2git allows to perform

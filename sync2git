@@ -143,6 +143,7 @@ do
     echo "First run, doing a full git-svn clone, this may take a while..."
     git svn clone \
       "${SVN_REPO}" \
+      ${FETCH_ARGS} \
       --prefix=origin/ \
       -A "${AUTHORS_FILE}" \
       ${SVN_LAYOUT} \
@@ -154,10 +155,11 @@ do
     # If a network issue disrupts a large a initial clone, then only a partial history is checked out. 
     # This state can be recoved by running a fetch. There is no harm in attempting this, 
     # so do it unconditionally if the clone already exists.
-    git svn fetch
+    git svn fetch ${FETCH_ARGS}
     echo "Doing a rebase..."
     git remote rm bare || echo "failed to delete remote:bare, proceeding anyway"
     git svn rebase \
+      ${FETCH_ARGS} \
       --fetch-all \
       -A "${AUTHORS_FILE}"
   fi
